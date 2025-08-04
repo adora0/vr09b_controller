@@ -1,4 +1,4 @@
- // DOM Elements
+// DOM Elements
             const connectBtn = document.getElementById('connect-btn');
             const statusEl = document.getElementById('status');
             const sendAllBtn = document.getElementById('send-all-btn');
@@ -17,6 +17,7 @@
             rdosc3.disabled = true;
 
             // MIDI variables
+            let testMode = true; // Flag per abilitare la modalità test
             let midiAccess = null;
             let midiOutput = null;
             const ROLAND_MANUFACTURER_ID = 0x41;
@@ -206,12 +207,10 @@
 
             // Send parameter value to VR-09B
             function sendParameterValue(paramId, value) {
-
-                if (!midiOutput) {
+                if (!midiOutput && !testMode) {
                     logMessage('Nessun dispositivo MIDI connesso', 'error');
                     return false;
                 }
-                console.log('yes');
                 const address = parameterAddresses[paramId];
                 if (address === undefined) {
                     logMessage(`Indirizzo parametro sconosciuto: ${paramId}`, 'error');
@@ -219,47 +218,85 @@
                 }
 
                 try {
-                    /*SELEZIONO L'OSCILLATORE*/
                     // Trova tutti i radiobutton con il nome 'osc-wave-variation'
-                    const oscSelected = document.querySelectorAll('input[name="osc-wave-variation"]');
+                    const oscSelected = document.querySelectorAll('input[name="osc-wave-variation"]:checked');
+                    if (oscSelected.length === 0) {
+                        logMessage('Nessun oscillatore selezionato', 'error');
+                        return false;
+                    }
 
-                    // Cerca quale radiobutton è selezionato
-                    let selectedValue = null;
                     oscSelected.forEach((radio) => {
-                        if (radio.checked) {
+                        if (radio.value == 0) {
+                            // Invia a tutti gli oscillatori accesi
+                            const oscList = [];
+                            if (!rdosc1.disabled) oscList.push(rdosc1.value);
+                            if (!rdosc2.disabled) oscList.push(rdosc2.value);
+                            if (!rdosc3.disabled) oscList.push(rdosc3.value);
+
+                            oscList.forEach(oscId => {
+                                OSCILLATOR_ID = oscId;
+                                const sysexMessage = [
+                                    0xF0,
+                                    ROLAND_MANUFACTURER_ID,
+                                    DEVICE_ID,
+                                    ...MODEL_ID,
+                                    COMMAND_ID,
+                                    ...UPPER_ID,
+                                    OSCILLATOR_ID,
+                                    address,
+                                    parseInt(value),
+                                    0x00,
+                                    0xF7
+                                ];
+
+                                // Calcolo checksum
+                                let checksum = 0;
+                                for (let i = 1; i < sysexMessage.length - 2; i++) {
+                                    checksum += sysexMessage[i];
+                                }
+                                checksum = 128 - (checksum % 128);
+                                sysexMessage[sysexMessage.length - 2] = checksum;
+
+                                if (testMode) {
+                                    console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
+                                } else {
+                                    midiOutput.send(new Uint8Array(sysexMessage));
+                                    logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
+                                }
+                            });
+                        } else {
+                            // Invia solo all'oscillatore selezionato
                             OSCILLATOR_ID = radio.value;
+                            const sysexMessage = [
+                                0xF0,
+                                ROLAND_MANUFACTURER_ID,
+                                DEVICE_ID,
+                                ...MODEL_ID,
+                                COMMAND_ID,
+                                ...UPPER_ID,
+                                OSCILLATOR_ID,
+                                address,
+                                parseInt(value),
+                                0x00,
+                                0xF7
+                            ];
+
+                            // Calcolo checksum
+                            let checksum = 0;
+                            for (let i = 1; i < sysexMessage.length - 2; i++) {
+                                checksum += sysexMessage[i];
+                            }
+                            checksum = 128 - (checksum % 128);
+                            sysexMessage[sysexMessage.length - 2] = checksum;
+
+                            if (testMode) {
+                                console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
+                            } else {
+                                midiOutput.send(new Uint8Array(sysexMessage));
+                                logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
+                            }
                         }
                     });
-                    
-                    // Format for Roland system exclusive message
-                    // F0 41 10 00 00 00 0F address value checksum F7
-                    const sysexMessage = [
-                        0xF0,                // Start of SysEx
-                        ROLAND_MANUFACTURER_ID, // Roland ID
-                        DEVICE_ID,          // Device ID
-                        ...MODEL_ID,        // Model ID
-                        COMMAND_ID, 		//Command ID
-                        ...UPPER_ID,			//upper 1941
-                        OSCILLATOR_ID,      // Oscillator ID
-                        address,            // Parameter address
-                        parseInt(value),    // Parameter value
-                        0x00,               // Checksum placeholder
-                        0xF7                // End of SysEx
-                    ];
-
-                    // Calculate checksum (Roland format)
-                    let checksum = 0;
-                    for (let i = 1; i < sysexMessage.length - 2; i++) {
-                        checksum += sysexMessage[i];
-                    }
-                    checksum = 128 - (checksum % 128);
-                    sysexMessage[sysexMessage.length - 2] = checksum;
-
-                    // Send the message
-                    //midiOutput.send(sysexMessage);
-                    midiOutput.send(new Uint8Array(sysexMessage));
-                    console.log(paramId);
-                    logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
 
                     return true;
                 } catch (error) {
@@ -271,11 +308,11 @@
             // accende o spegne l'oscilallatore
             function setOscOn(osc, status) {
 
-                if (!midiOutput) {
+                if (!midiOutput && !testMode) {
                     logMessage('Nessun dispositivo MIDI connesso', 'error');
                     return false;
                 }
-                const address = parameterAddresses['osc-wave'];
+                const address = parameterAddresses['osc-wave-variation'];
 
                 OSCILLATOR_ID = parseInt(osc);
                 try {
@@ -303,9 +340,13 @@
                     }
                     checksum = 128 - (checksum % 128);
                     sysexMessage[sysexMessage.length - 2] = checksum;
+                    
+                    if (testMode) {
+                        console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
+                        return true;
+                    }
 
-                    // Send the message
-                    //midiOutput.send(sysexMessage);                    
+                    // Send the message                                      
                     midiOutput.send(new Uint8Array(sysexMessage));
                     logMessage(`Parametro inviato: ${paramId} = ` + formatSysEx(sysexMessage), 'info');
                     return true;
@@ -323,7 +364,7 @@
 
             // Send all parameters to the VR-09B
             sendAllBtn.addEventListener('click', () => {
-                if (!midiOutput) {
+                if (!midiOutput && !testMode) {
                     logMessage('Nessun dispositivo MIDI connesso', 'error');
                     return;
                 }
@@ -334,6 +375,7 @@
                 // Process all inputs
                 document.querySelectorAll('select, input[type="range"]').forEach(element => {
                     if (element.id !== 'midi-output-select') {
+                        
                         const result = sendParameterValue(element.id, element.value);
                         if (result) {
                             successCount++;
@@ -352,7 +394,7 @@
      
                 if (element.id !== 'midi-output-select') {
                     element.addEventListener('change', () => {
-                        if (midiOutput) {
+                        if (!midiOutput) {
                             sendParameterValue(element.id, element.value);
                         }
                     });
