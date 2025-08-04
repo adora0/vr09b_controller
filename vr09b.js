@@ -17,7 +17,7 @@
             rdosc3.disabled = true;
 
             // MIDI variables
-            let testMode = true; // Flag per abilitare la modalità test
+            let testMode = false; // Flag per abilitare la modalità test
             let midiAccess = null;
             let midiOutput = null;
             const ROLAND_MANUFACTURER_ID = 0x41;
