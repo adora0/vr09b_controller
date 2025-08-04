@@ -418,34 +418,28 @@
 
                 // Abilita o no i radio button in base allo stato degli switch
                 if (osc1) {
-                    rdosc1.disabled = false;
-                    logMessage('osc1-on', 'info');
+                    rdosc1.disabled = false;                    
                     setOscOn('25', '1');
                 } else {
-                    rdosc1.disabled = true;
-                    logMessage('osc1-off', 'info');
+                    rdosc1.disabled = true;                    
                     setOscOn('25', '0');
                 }
                 if (osc2) {
-                    rdosc2.disabled = false;
-                    logMessage('osc2-on', 'info');
+                    rdosc2.disabled = false;                   
                     setOscOn('27', '1');
                 }
                 else {
                     rdosc2.disabled = true;
-                    logMessage('osc2-off', 'info');
                     setOscOn('27', '0');
 
                 }
                 if (osc3) {
                     rdosc3.disabled = false;
-                    logMessage('osc3-on', 'info');
                     setOscOn('29', '1');
 
                 }
                 else {
                     rdosc3.disabled = true;
-                    logMessage('osc3-off', 'info');
                     setOscOn('29', '0');
 
                 }
