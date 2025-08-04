@@ -349,7 +349,7 @@
 
                     // Send the message                                      
                     midiOutput.send(new Uint8Array(sysexMessage));
-                    logMessage(`Parametro inviato: ${paramId} = ` + formatSysEx(sysexMessage), 'info');
+                    logMessage(`Oscillatore: ${osc} = ` + formatSysEx(sysexMessage), 'info');
                     return true;
                 } catch (error) {             
                     logMessage(`Errore nell'invio del parametro: ${error.message}`, 'error');
