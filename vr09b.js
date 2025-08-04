@@ -313,7 +313,7 @@
                     logMessage('Nessun dispositivo MIDI connesso', 'error');
                     return false;
                 }
-                const address = parameterAddresses['osc-wave-variation'];
+                const address = 0x00;
 
                 OSCILLATOR_ID = parseInt(osc);
                 try {
@@ -325,9 +325,9 @@
                         ROLAND_MANUFACTURER_ID, // Roland ID
                         DEVICE_ID,          // Device ID
                         ...MODEL_ID,        // Model ID
-                       // COMMAND_ID, 		//Command ID
+                        COMMAND_ID, 		//Command ID
                         ...UPPER_ID,			//upper 1941
-                        address,      // Parameter address
+                        address,      // 0x00 address for oscillator on/off
                         OSCILLATOR_ID,            // Oscillator ID
                         parseInt(status),    // Parameter value
                         0x00,               // Checksum placeholder
@@ -413,6 +413,7 @@
           
             function updateOscillatorStatus() {
                 const oscWaveVariationSelect = document.getElementById('osc-wave-variation');
+                const oscWave = document.getElementById('osc-wave');
                 const osc1 = document.getElementById('switch1').checked;
                 const osc2 = document.getElementById('switch2').checked;
                 const osc3 = document.getElementById('switch3').checked;                      
