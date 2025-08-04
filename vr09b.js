@@ -18,7 +18,7 @@
 
             // MIDI variables
             let testMode = false; // Flag per abilitare la modalità test
-            console.log
+            console.log('TestMode:', testMode);
             let midiAccess = null;
             let midiOutput = null;
             const ROLAND_MANUFACTURER_ID = 0x41;
@@ -325,7 +325,7 @@
                         ROLAND_MANUFACTURER_ID, // Roland ID
                         DEVICE_ID,          // Device ID
                         ...MODEL_ID,        // Model ID
-                        COMMAND_ID, 		//Command ID
+                       // COMMAND_ID, 		//Command ID
                         ...UPPER_ID,			//upper 1941
                         address,      // Parameter address
                         OSCILLATOR_ID,            // Oscillator ID
