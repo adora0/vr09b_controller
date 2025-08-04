@@ -18,6 +18,7 @@
 
             // MIDI variables
             let testMode = false; // Flag per abilitare la modalità test
+            console.log
             let midiAccess = null;
             let midiOutput = null;
             const ROLAND_MANUFACTURER_ID = 0x41;
