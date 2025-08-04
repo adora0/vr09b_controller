@@ -394,7 +394,7 @@
      
                 if (element.id !== 'midi-output-select') {
                     element.addEventListener('change', () => {
-                        if (!midiOutput) {
+                        if (midiOutput) {
                             sendParameterValue(element.id, element.value);
                         }
                     });
@@ -402,7 +402,7 @@
                     // For sliders, also update while dragging
                     if (element.type === 'range') {
                         element.addEventListener('input', () => {
-                            if (!midiOutput) {
+                            if (midiOutput) {
                                 sendParameterValue(element.id, element.value);
                             }
                         });
