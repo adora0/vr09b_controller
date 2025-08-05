@@ -6,18 +6,16 @@
             const tabPanels = document.querySelectorAll('.tab-panel');
             const logsContainer = document.querySelector('.logs');
 
-            const rdosc1 = document.getElementById('radioosc1') ;
-            const rdosc0 = document.getElementById('radioosc0') ;
+            const rdosc1 = document.getElementById('radioosc1') ;         
             const rdosc2 = document.getElementById('radioosc2') ;
             const rdosc3 = document.getElementById('radioosc3') ;
            
-            rdosc1.disabled = true;
-            rdosc0.disabled = true;
+            rdosc1.disabled = true;             
             rdosc2.disabled = true;
             rdosc3.disabled = true;
 
             // MIDI variables
-            let testMode = false; // Flag per abilitare la modalità test
+            let testMode = true; // Flag per abilitare la modalità test
             console.log('TestMode:', testMode);
             let midiAccess = null;
             let midiOutput = null;
@@ -212,6 +210,7 @@
                     logMessage('Nessun dispositivo MIDI connesso', 'error');
                     return false;
                 }
+                
                 const address = parameterAddresses[paramId];
                 if (address === undefined) {
                     logMessage(`Indirizzo parametro sconosciuto: ${paramId}`, 'error');
@@ -226,79 +225,37 @@
                         return false;
                     }
 
-                    oscSelected.forEach((radio) => {
-                        if (radio.value == 0) {
-                            // Invia a tutti gli oscillatori accesi
-                            const oscList = [];
-                            if (!rdosc1.disabled) oscList.push(rdosc1.value);
-                            if (!rdosc2.disabled) oscList.push(rdosc2.value);
-                            if (!rdosc3.disabled) oscList.push(rdosc3.value);
+                    // Invia solo all'oscillatore selezionato
+                    OSCILLATOR_ID = oscSelected[0].value;
+                    const sysexMessage = [
+                        0xF0,
+                        ROLAND_MANUFACTURER_ID,
+                        DEVICE_ID,
+                        ...MODEL_ID,
+                        COMMAND_ID,
+                        ...UPPER_ID,
+                        OSCILLATOR_ID,
+                        address,
+                        parseInt(value),
+                        0x00,
+                        0xF7
+                    ];
 
-                            oscList.forEach(oscId => {
-                                OSCILLATOR_ID = oscId;
-                                const sysexMessage = [
-                                    0xF0,
-                                    ROLAND_MANUFACTURER_ID,
-                                    DEVICE_ID,
-                                    ...MODEL_ID,
-                                    COMMAND_ID,
-                                    ...UPPER_ID,
-                                    OSCILLATOR_ID,
-                                    address,
-                                    parseInt(value),
-                                    0x00,
-                                    0xF7
-                                ];
+                    // Calcolo checksum
+                    let checksum = 0;
+                    for (let i = 1; i < sysexMessage.length - 2; i++) {
+                        checksum += sysexMessage[i];
+                    }
+                    checksum = 128 - (checksum % 128);
+                    sysexMessage[sysexMessage.length - 2] = checksum;
 
-                                // Calcolo checksum
-                                let checksum = 0;
-                                for (let i = 1; i < sysexMessage.length - 2; i++) {
-                                    checksum += sysexMessage[i];
-                                }
-                                checksum = 128 - (checksum % 128);
-                                sysexMessage[sysexMessage.length - 2] = checksum;
-
-                                if (testMode) {
-                                    console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
-                                } else {
-                                    midiOutput.send(new Uint8Array(sysexMessage));
-                                    logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
-                                }
-                            });
-                        } else {
-                            // Invia solo all'oscillatore selezionato
-                            OSCILLATOR_ID = radio.value;
-                            const sysexMessage = [
-                                0xF0,
-                                ROLAND_MANUFACTURER_ID,
-                                DEVICE_ID,
-                                ...MODEL_ID,
-                                COMMAND_ID,
-                                ...UPPER_ID,
-                                OSCILLATOR_ID,
-                                address,
-                                parseInt(value),
-                                0x00,
-                                0xF7
-                            ];
-
-                            // Calcolo checksum
-                            let checksum = 0;
-                            for (let i = 1; i < sysexMessage.length - 2; i++) {
-                                checksum += sysexMessage[i];
-                            }
-                            checksum = 128 - (checksum % 128);
-                            sysexMessage[sysexMessage.length - 2] = checksum;
-
-                            if (testMode) {
-                                console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
-                            } else {
-                                midiOutput.send(new Uint8Array(sysexMessage));
-                                logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
-                            }
-                        }
-                    });
-
+                    if (testMode) {                        
+                        console.log('TestMode: SysEx generato:', formatSysEx(sysexMessage));
+                    } else {
+                        midiOutput.send(new Uint8Array(sysexMessage));
+                        logMessage(`Parametro inviato: ${paramId} = ${value} - ` + formatSysEx(sysexMessage), 'info');
+                    }                    
+            
                     return true;
                 } catch (error) {
                     logMessage(`Errore nell'invio del parametro: ${error.message}`, 'error');
@@ -392,22 +349,11 @@
 
             // Add event listeners to all parameters for real-time control
             document.querySelectorAll('select, input[type="range"]').forEach(element => {
-     
                 if (element.id !== 'midi-output-select') {
                     element.addEventListener('change', () => {
-                        if (midiOutput) {
-                            sendParameterValue(element.id, element.value);
-                        }
+                        console.log(`Parametro cambiato: ${element.id} = ${element.value}`);
+                        sendParameterValue(element.id, element.value);
                     });
-
-                    // For sliders, also update while dragging
-                    if (element.type === 'range') {
-                        element.addEventListener('input', () => {
-                            if (midiOutput) {
-                                sendParameterValue(element.id, element.value);
-                            }
-                        });
-                    }
                 }
             });
           
@@ -444,14 +390,7 @@
                     rdosc3.disabled = true;
                     setOscOn('29', '0');
 
-                }
-
-                // Add default option if no oscillators are ON
-                if (osc1 || osc2 || osc3) {                   
-                    rdosc0.disabled = false;
-                }else {
-                    rdosc0.disabled = true;
-                }
+                }              
 
             }
             // Add event listeners to update status when checkboxes are toggled
@@ -484,6 +423,18 @@
                     logsContainer.removeChild(logsContainer.firstChild);
                 }
             }
+
+            // Check for Web MIDI API support on page load
+            window.addEventListener('load', () => {
+                if (!navigator.requestMIDIAccess) {
+                    logMessage('Il browser non supporta Web MIDI API', 'error');
+                    statusEl.textContent = 'Stato: Web MIDI API non supportata';
+                    connectBtn.disabled = true;
+                } else {
+                    logMessage('Web MIDI API supportata. Premi "Connetti MIDI" per iniziare.', 'info');
+                }
+            });
+            
 
             // Check for Web MIDI API support on page load
             window.addEventListener('load', () => {
