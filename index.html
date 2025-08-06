@@ -100,7 +100,15 @@
                                     <option value="7">PCM</option>
                                 </select>
                             </div>
-
+                             <div class="parameter">
+                                <label for="osc-volume">Volume (0-127)</label>
+                                <div class="slider-container">
+                                  <!-- <input type="range" id="osc-volume" min="0" max="127" value="64">
+                                    <span class="value" id="osc-volume-value">0</span>--> 
+                                    <div class="knob" id="osc-volume-knob" style="transform: rotate(0deg);" min="0" max="127" value="64"></div>
+                                    <div class="knob-value" id="osc-volume-value">0</div>
+                                </div>
+                            </div>
                             <div class="parameter">
                                 <label for="osc-pitch">Pitch (40-88) [-24 - +24]</label>
                                 <div class="slider-container">

@@ -30,6 +30,7 @@ OSCILLATOR_ID = 0x00;
 // Parameters mapping
 const parameterAddresses = {
     // Oscillator parameters
+    'osc-volume': 0x15,
     'osc-wave': 0x00,
     'osc-wave-variation': 0x01,
     'osc-pitch': 0x03,

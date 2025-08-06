@@ -1,5 +1,7 @@
 /*carico i valori di default per i parametri del sintetizzatore*/
 const paramConfig = {
+
+    'osc-volume': { min: 0, max: 127, default: 64 },
     'osc-wave': { min: 0, max: 7, default: 0 },
     'osc-wave-variation': { min: 0, max: 7, default: 0 },
     'osc-pitch': { min: 40, max: 88, default: 64 },
@@ -52,6 +54,19 @@ document.querySelectorAll('.knob').forEach(knob => {
     knob.addEventListener('dblclick', () => {
         tempValue = config.default;
         sendAndStoreParam(paramId, tempValue);        
+    });
+
+       // Doppio tap touch
+    knob.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 400) { // 400ms: intervallo doppio tap
+            tempValue = config.default;
+            sendAndStoreParam(paramId, tempValue);
+            updateKnobVisual(knob, tempValue);
+            lastTap = 0; // reset
+        } else {
+            lastTap = now;
+        }
     });
 
     const onStart = (e) => {
