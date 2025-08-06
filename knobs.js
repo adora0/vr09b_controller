@@ -43,40 +43,51 @@ document.querySelectorAll('.knob').forEach(knob => {
     let isDragging = false;
     let startY;
     let tempValue = 0;
+    let lastSentValue = null;
+    let sendInterval = null;
     const paramId = knob.id.replace('-knob', '');
-    const config = paramConfig[paramId]; // Accedi al min/max/default
+    const config = paramConfig[paramId];
 
     // Doppio clic = reset valore a default
     knob.addEventListener('dblclick', () => {
         tempValue = config.default;
-        sendAndStoreParam(paramId, tempValue);
-       
+        sendAndStoreParam(paramId, tempValue);        
     });
 
     const onStart = (e) => {
         isDragging = true;
-        startY = e.clientY || e.touches[0].clientY;
+        startY = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         tempValue = oscillatorStates[activeOscId][paramId];
+        lastSentValue = tempValue;
         e.preventDefault();
+
+        // Avvia invio continuo ogni 50ms
+        sendInterval = setInterval(() => {
+            if (tempValue !== lastSentValue) {
+                sendAndStoreParam(paramId, tempValue);
+                lastSentValue = tempValue;
+            }
+        }, 50);
     };
 
     const onEnd = () => {
         if (isDragging) {
             sendAndStoreParam(paramId, tempValue);
             isDragging = false;
+            clearInterval(sendInterval);
         }
     };
 
     const onMove = (e) => {
         if (!isDragging) return;
-        const y = e.clientY || e.touches[0].clientY;
-        const delta = startY - y;
-        startY = y;
+        const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const delta = x - startY;
+        startY = x;
 
         tempValue += Math.round(delta / 4);
         tempValue = Math.max(config.min, Math.min(config.max, tempValue));
 
-        updateKnobVisual(knob, tempValue); // funzione per aggiornare la UI
+        updateKnobVisual(knob, tempValue);
     };
 
     knob.addEventListener('mousedown', onStart);
